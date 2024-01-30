@@ -40,6 +40,7 @@ const CategoryController = {
       res.status(201).json(newCategory.rows[0]);
     } catch (error) {
       res.status(500).json({ error: error.message });
+      return error;
     }
   },
 
@@ -61,6 +62,25 @@ const CategoryController = {
       res.status(500).json({ error: error.message });
     }
   },
-};
+  async update(req, res) {
+    const { id } = req.params;
+    
+    try {
+      const updatedMoovie = await db.query(
+        "UPDATE moovies SET title = $1, category_id = $2 WHERE id = $3 RETURNING *",
+        [title, category_id, id]
+      );
+
+      if (updatedMoovie.rows.length > 0) {
+        res.json(updatedMoovie.rows[0]);
+      } else {
+        res.status(404).json({ error: "Filme não encontrado" });
+      }
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+      return error;
+    }
+  },
+  };
 
 module.exports = CategoryController;

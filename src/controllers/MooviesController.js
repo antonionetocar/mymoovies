@@ -1,4 +1,12 @@
 const db = require("../db");
+const Joi = require('joi');
+
+const createMoovieSchema = Joi.object({
+  title: Joi.string().required(),
+  description: Joi.string().required(),
+  category_id: Joi.number().integer().required(),
+  realease_date: Joi.date().iso().required(),
+});
 
 const MooviesController = {
   async findAll(req, res) {
@@ -14,12 +22,16 @@ const MooviesController = {
 
       res.json(moovies.rows);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      handleError(res, error);
     }
   },
 
   async find(req, res) {
     const { id } = req.params;
+
+    if (!Number.isInteger(parseInt(id, 10))) {
+      return res.status(400).json({ error: 'ID inválido' });
+    }
 
     try {
       const moovies = await db.query(
@@ -41,30 +53,36 @@ const MooviesController = {
         res.status(404).json({ error: "Filme não encontrado" });
       }
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      handleError(res, error);
     }
   },
 
   async create(req, res) {
-    const { title, description, category_id, realease_date } = req.body;
+    const { error, value } = createMoovieSchema.validate(req.body);
 
-    // É necessário realizar uma validação pelo id de categoria
+    if (error) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
 
     try {
-      const newMoovie = await db.query(
+      const newMovie = await db.query(
         `INSERT INTO moovie (title, description, category_id, realease_date)
          VALUES ($1, $2, $3, $4) RETURNING *`,
-        [title, description, category_id, realease_date]
+        [value.title, value.description, value.category_id, value.realease_date]
       );
 
-      res.status(201).json(newMoovie.rows[0]);
+      res.status(201).json(newMovie.rows[0]);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      handleError(res, error);
     }
   },
 
   async delete(req, res) {
     const { id } = req.params;
+
+    if (!Number.isInteger(parseInt(id, 10))) {
+      return res.status(400).json({ error: 'ID inválido' });
+    }
 
     try {
       const result = await db.query(
@@ -78,9 +96,13 @@ const MooviesController = {
         res.status(304).json({});
       }
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      handleError(res, error);
     }
   },
 };
+
+function handleError(res, error) {
+  res.status(500).json({ error: error.message });
+}
 
 module.exports = MooviesController;
