@@ -16,6 +16,6 @@ app.use('/category', categoryRoutes);
 app.use('/moovies', mooviesRoutes);
 
 app.listen(3000,()=>{
-    console.log('server running on http://localhost:${PORT}');
+    console.log('server running on http://localhost:3000');
 
 });
